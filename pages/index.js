@@ -20,12 +20,14 @@ export default function Home() {
 class SolarSystem extends React.Component {
   state = {
     planets: [
-      new Planet(0, 100, 200, 20, "red"),
-      new Planet(0, 50, 400, 40, "yellow"),
+      // new Planet(0, 100, 200, 20, "red"),
+      // new Planet(0, 50, 300, 40, "yellow"),
     ],
+    orbitalRatios: [1, 2, 3, 6],
     isMenuOpen: false,
     width: 0,
     height: 0,
+    isMounted: true,
   };
 
   constructor(props) {
@@ -33,32 +35,74 @@ class SolarSystem extends React.Component {
   }
 
   componentDidMount() {
-    this.updatePlanetsPositions();
     this.setState({
       width: window.innerWidth / 2,
       height: window.innerHeight / 2,
+    });
+
+    const genRanHex = (size) =>
+      [...Array(size)]
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join("");
+
+    let newPlanets = [];
+    for (let ratio of this.state.orbitalRatios) {
+      let radius =
+        (ratio / this.state.orbitalRatios.at(-1)) *
+          Math.min(window.innerWidth / 2, window.innerHeight / 2) *
+          0.75 +
+        0.25;
+
+      console.log(ratio);
+      console.log(this.state.orbitalRatios.at(-1) + "\n\n");
+
+      newPlanets.push(
+        new Planet(
+          Math.random() * 2 * Math.PI,
+          ratio * 50,
+          radius,
+          [15, 20, 25, 30][Math.floor(Math.random() * 4)],
+          "#" + genRanHex(6)
+        )
+      );
+    }
+
+    this.setState(
+      {
+        planets: newPlanets,
+      },
+      () => this.updatePlanetsPositions()
+    );
+  }
+
+  componentWillUnmount() {
+    this.setState({
+      isMounted: false,
     });
   }
 
   updatePlanetsPositions() {
     let newPlanets = [];
     for (let planet of this.state.planets) {
-      newPlanets.push(planet.updatePosition(0.1));
+      newPlanets.push(planet.updatePosition(0.05));
     }
 
     this.setState({ planets: newPlanets });
 
-    setTimeout(() => {
-      this.updatePlanetsPositions();
-    }, 1);
+    if (this.state.isMounted) {
+      setTimeout(() => {
+        this.updatePlanetsPositions();
+      }, 1);
+    }
   }
 
   render() {
     return (
       <div>
         <div>
+          <div className={styles.sun}></div>
           {this.state.planets.map((planet) =>
-            FormPlanet(
+            this.FormPlanet(
               this.state.planets[this.state.planets.indexOf(planet)].x,
               this.state.planets[this.state.planets.indexOf(planet)].y,
               this.state.width,
@@ -71,25 +115,35 @@ class SolarSystem extends React.Component {
       </div>
     );
   }
-}
 
-function FormPlanet(x, y, centreX, centreY, planet) {
-  return (
-    <motion.div
-      key={planet}
-      className={styles.planet}
-      animate={{
-        x: x * planet.radius + centreX,
-        y: y * planet.radius + centreY,
-      }}
-      style={{
-        height: planet.size,
-        width: planet.size,
-        borderRadius: planet.size,
-        backgroundColor: planet.colour,
-      }}
-    ></motion.div>
-  );
+  FormPlanet(x, y, centreX, centreY, planet) {
+    return (
+      <motion.div
+        key={this.state.planets.indexOf(planet)}
+        className={styles.planet}
+        initial={{
+          x: centreX - planet.size / 2,
+          y: centreY - planet.size / 2,
+        }}
+        animate={{
+          x: x * planet.radius + centreX - planet.size / 2,
+          y: y * planet.radius + centreY - planet.size / 2,
+        }}
+        transition={{
+          type: "spring",
+          bounce: 0.1,
+          damping: 30,
+          mass: 10,
+        }}
+        style={{
+          height: planet.size,
+          width: planet.size,
+          borderRadius: planet.size,
+          backgroundColor: planet.colour,
+        }}
+      ></motion.div>
+    );
+  }
 }
 
 class Planet {
