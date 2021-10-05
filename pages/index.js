@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import Head from "next/head";
-import Image from "next/image";
 import React from "react";
 import styles from "../styles/Home.module.css";
 
@@ -22,10 +21,7 @@ export default function Home() {
 
 class SolarSystem extends React.Component {
   state = {
-    planets: [
-      // new Planet(0, 100, 200, 20, "red"),
-      // new Planet(0, 50, 300, 40, "yellow"),
-    ],
+    planets: [],
     orbitalRatios: [1, 2, 3, 6],
     isMenuOpen: false,
     width: 0,
