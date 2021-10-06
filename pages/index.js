@@ -22,6 +22,7 @@ export default function Home() {
 class SolarSystem extends React.Component {
   state = {
     planets: [],
+    planetsCross: [],
     orbitalRatios: [1, 2, 3, 6],
     isMenuOpen: false,
     width: 0,
@@ -39,21 +40,35 @@ class SolarSystem extends React.Component {
       height: window.innerHeight / 2,
     });
 
+    this.generateRandomPlanets(this.state.orbitalRatios, () =>
+      this.updatePlanetsPositions(
+        this.state.planets.map((planet) => planet.angle)
+      )
+    );
+  }
+
+  componentWillUnmount() {
+    this.setState({
+      isMounted: false,
+    });
+  }
+
+  generateRandomPlanets(orbitalRatios, callback) {
     const genRanHex = (size) =>
       [...Array(size)]
         .map(() => Math.floor(Math.random() * 16).toString(16))
         .join("");
 
     let newPlanets = [];
-    for (let ratio of this.state.orbitalRatios) {
+    for (let ratio of orbitalRatios) {
       let radius = Array.from(
-        { length: this.state.orbitalRatios.length },
+        { length: orbitalRatios.length },
         (_, i) => i + 1
       ).map(
         (num) =>
-          (num / this.state.orbitalRatios.length) *
+          (num / orbitalRatios.length) *
           Math.min(window.innerWidth / 2, window.innerHeight / 2)
-      )[this.state.orbitalRatios.indexOf(ratio)];
+      )[orbitalRatios.indexOf(ratio)];
 
       newPlanets.push(
         new Planet(
@@ -69,28 +84,44 @@ class SolarSystem extends React.Component {
     this.setState(
       {
         planets: newPlanets,
+        planetsCross: Array.from(
+          { length: newPlanets.length },
+          (_, i) => false
+        ),
       },
-      () => this.updatePlanetsPositions()
+      callback
     );
   }
 
-  componentWillUnmount() {
-    this.setState({
-      isMounted: false,
-    });
+  endAnimation(i) {
+    let newPlanetsCross = this.state.planetsCross;
+    newPlanetsCross[i] = false;
+    this.setState({ planetsCross: newPlanetsCross });
   }
 
-  updatePlanetsPositions() {
+  updatePlanetsPositions(previousAngles) {
     let newPlanets = [];
+    let newPlanetsCross = [...previousAngles.map((i) => false)];
     for (let planet of this.state.planets) {
       newPlanets.push(planet.updatePosition(0.05));
+
+      for (let previousAngle of previousAngles) {
+        if (
+          previousAngle < planet.angle &&
+          previousAngles.indexOf(previousAngle) !=
+            this.state.planets.indexOf(planet)
+        ) {
+          newPlanetsCross[this.state.planets.indexOf(planet)] = true;
+          // newPlanetsCross[previousAngles.indexOf(previousAngle)] = true;
+        }
+      }
     }
 
-    this.setState({ planets: newPlanets });
+    this.setState({ planets: newPlanets, planetsCross: newPlanetsCross });
 
     if (this.state.isMounted) {
       setTimeout(() => {
-        this.updatePlanetsPositions();
+        this.updatePlanetsPositions(newPlanets.map((planet) => planet.angle));
       }, 1);
     }
   }
@@ -130,8 +161,8 @@ class SolarSystem extends React.Component {
         }}
         transition={{
           type: "spring",
-          damping: 50,
-          mass: 3,
+          damping: 5,
+          mass: 0.1,
         }}
         style={{
           height: planet.size,
@@ -139,7 +170,15 @@ class SolarSystem extends React.Component {
           borderRadius: planet.size,
           backgroundColor: planet.colour,
         }}
-      ></motion.div>
+      >
+        <div
+          className={
+            this.state.planetsCross[this.state.planets.indexOf(planet)]
+              ? `${styles.innerPlanet} ${styles.ding}`
+              : styles.innerPlanet
+          }
+        ></div>
+      </motion.div>
     );
   }
 }
