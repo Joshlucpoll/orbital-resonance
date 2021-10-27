@@ -23,7 +23,7 @@ class SolarSystem extends React.Component {
   state = {
     planets: [],
     planetsCross: [],
-    orbitalRatios: [1, 2, 3, 6],
+    orbitalRatios: [1, 2],
     isMenuOpen: false,
     width: 0,
     height: 0,
@@ -177,6 +177,8 @@ class SolarSystem extends React.Component {
               ? `${styles.innerPlanet} ${styles.ding}`
               : styles.innerPlanet
           }
+          onAnimationStart={() => console.log("animation started")}
+          onAnimationEnd={() => this.setState({})}
         ></div>
       </motion.div>
     );
